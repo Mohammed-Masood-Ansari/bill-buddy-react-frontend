@@ -60,22 +60,32 @@ const UserDashboard = () => {
   };
 
   const handleAddFriend = async (e) => {
-    e.preventDefault();
-    if (newFriend.userEmail.trim() && newFriend.roomName.trim()) {
-      try {
-        let resp = await axios.get(
-          `http://localhost:8182/roomMates/addRoomMates/${newFriend.userEmail}/${newFriend.roomName}`
-        );
-        console.log(resp);
-        getAllGroups();
-        setNewFriend({ userEmail: "", roomName: "" });
-        setShowAddFriend(false);
-      } catch (error) {
-        console.log(error);
-        console.log("error while adding friend");
-      }
+  e.preventDefault();
+  
+  // Ensure user is logged in first
+  const accesstoken = sessionStorage.getItem("accesstoken");
+  if (!accesstoken) {
+    toast.error("You must be logged in to add a friend!");
+    return;
+  }
+
+  if (newFriend.userEmail.trim() && newFriend.roomName.trim()) {
+    try {
+      let resp = await axios.get(
+        `http://localhost:8182/roomMates/addRoomMates/${newFriend.userEmail}/${newFriend.roomName}`,
+        { withCredentials: true }
+      );
+      console.log(resp);
+      getAllGroups();
+      setNewFriend({ userEmail: "", roomName: "" });
+      setShowAddFriend(false);
+    } catch (error) {
+      toast.error(error.response.data.message);
+      console.log("error while adding friend");
     }
-  };
+  }
+};
+
 
   const handleAddItem = async (itemData, roomName) => {
     try {
@@ -98,17 +108,41 @@ const UserDashboard = () => {
   };
 
   const logoutuser = async () => {
-    try {
-      let resp = await axios.get("http://localhost:8182/user/userLogout",{withCredentials:true});
-      console.log(resp);
-      sessionStorage.removeItem("accesstoken")
+  try {
+    let resp = await axios.get("http://localhost:8182/user/userLogout", {
+      withCredentials: true,
+    });
+    console.log(resp);
+
+    // Only remove the session if the response is successful
+    if (resp.status === 200) {
+      sessionStorage.removeItem("accesstoken");
       toast.success("Logout success");
       navigate("/login");
-    } catch (error) {
-      console.log(error);
-      toast.error("Something went wrong");
+    } else {
+      // If status is not 200, log it
+      console.log("Logout failed with status: ", resp.status);
+      toast.error("Logout failed, please try again.");
     }
-  };
+  } catch (error) {
+    console.error("Error during logout:", error);
+    
+    // Enhanced error handling
+    if (error.response) {
+      // Server responded with a status other than 200 range
+      console.log("Error response: ", error.response);
+      toast.error(`Logout failed: ${error.response.data.message || 'Unknown error'}`);
+    } else if (error.request) {
+      // Request was made, but no response received
+      console.log("Error request: ", error.request);
+      toast.error("Network error. Please check your internet connection.");
+    } else {
+      // Something happened in setting up the request
+      console.log("Error message: ", error.message);
+      toast.error(`Logout failed: ${error.message}`);
+    }
+  }
+};
 
   const fetchGroupItems = async () => {
   try {
