@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
 const UserDashboard = () => {
+  const [oweMessage, setOweMessage] = useState(null);
   const [groupItems, setGroupItems] = useState([]);
   const [groups, setGroups] = useState([]);
   const [showCreateGroup, setShowCreateGroup] = useState(false);
@@ -89,6 +90,8 @@ const UserDashboard = () => {
       toast.success(`${itemData.itemsName} Added`);
       setShowAddItem(false);
       setSelectedGroupForItem(null);
+      // 👇 Refresh owe info here
+    fetchOweInfo();
     } catch (error) {
       console.log("error while adding item:", error);
     }
@@ -117,6 +120,30 @@ const UserDashboard = () => {
     console.error("Error fetching group items", err);
   }
 };
+
+const fetchOweInfo = async () => {
+  try {
+    const response = await axios.get(
+      "http://localhost:8182/owe/getOweUserByLoggedUserId",
+      { withCredentials: true }
+    );
+    const data = response.data;
+    
+    // Format the message
+    const message = `${data.borrowMessage}${data.money}₹${data.lendMessage}`;
+    setOweMessage(message);
+  } catch (error) {
+    if (error.response?.status === 204) {
+      setOweMessage("No one has borrowed money.");
+    } else {
+      console.error("Error fetching owe info:", error);
+    }
+  }
+};
+
+useEffect(() => {
+  fetchOweInfo();
+}, []);
 
 useEffect(() => {
   fetchGroupItems();
@@ -207,6 +234,11 @@ useEffect(() => {
             </div>
           </div>
         </div>
+        {oweMessage && (
+  <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded-lg shadow-sm">
+    <p className="font-medium">{oweMessage}</p>
+  </div>
+)}
         {/* Group Items Table */}
 <div className="mt-10 bg-white p-6 rounded-lg shadow-lg">
   <h2 className="text-2xl font-semibold mb-4 text-gray-800">Group Items</h2>
