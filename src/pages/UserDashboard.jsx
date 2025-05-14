@@ -101,7 +101,9 @@ const UserDashboard = () => {
       setShowAddItem(false);
       setSelectedGroupForItem(null);
       // 👇 Refresh owe info here
-    fetchOweInfo();
+    // Refresh data
+    fetchOweInfo();       // existing call
+    fetchGroupItems(); 
     } catch (error) {
       console.log("error while adding item:", error);
     }
