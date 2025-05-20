@@ -16,6 +16,8 @@ const UserDashboard = () => {
   const [showAddItem, setShowAddItem] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [selectedGroupForItem, setSelectedGroupForItem] = useState(null);
+  const [loginuser,setLoginuser] = useState(null)
+  const [totalPrice,setTotalPrice] = useState(0)
   const [newGroup, setNewGroup] = useState({
     roomName: "",
   });
@@ -35,10 +37,28 @@ const UserDashboard = () => {
     setGroups(data);
   }
 
-  // !GET ALL FRIENDS API CALL
-  useEffect(() => {
-    getAllGroups();
-  }, []);
+  // PUT API TO GET LOGIN USER DATA
+  async function getloginuserData() {
+    let { data } = await axios.get(
+      "http://localhost:8182/user/getUserName",
+      { withCredentials: true }
+    );
+    setLoginuser(data);
+  }
+
+  async function getTotalPrice() {
+    let { data } = await axios.get(
+      "http://localhost:8182/user/getUserLoggedInAddedItemsSummation",
+      { withCredentials: true }
+    );
+    console.log(data);
+    setTotalPrice(data.totalSum);
+  }
+
+  useEffect(()=>{
+        getTotalPrice()
+  },[showAddItem])
+
 
   const handleCreateGroup = async (e) => {
     e.preventDefault();
@@ -177,11 +197,13 @@ const fetchOweInfo = async () => {
   }
 };
 
-useEffect(() => {
-  fetchOweInfo();
-}, []);
+
 
 useEffect(() => {
+      getAllGroups();
+      getloginuserData()
+
+  fetchOweInfo();
   fetchGroupItems();
 }, []);
 
@@ -223,8 +245,13 @@ useEffect(() => {
           {/* Groups Section */}
           <div className="col-span-2 order-last md:order-first">
             <div className="bg-white rounded-lg shadow-lg p-6">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-4 flex justify-between">
                 Your Groups
+
+                <div className="">
+                  <div>Welcome, <span>{loginuser?.name}</span></div>
+                  <p className="text-gray-400 text-sm text-end">Total Amount Added By You = <span>{totalPrice}</span></p>
+                </div>
               </h2>
               {groups?.length === 0 ? (
                 <p className="text-gray-500 text-center py-4">
@@ -271,7 +298,7 @@ useEffect(() => {
           </div>
         </div>
         {oweMessage && (
-  <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded-lg shadow-sm">
+  <div className="bg-yellow-100 mt-10 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded-lg shadow-sm">
     <p className="font-medium">{oweMessage}</p>
   </div>
 )}
